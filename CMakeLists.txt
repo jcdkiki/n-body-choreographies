@@ -9,4 +9,5 @@ add_executable(main src/main.cpp src/render.cpp src/simulation.cpp)
 include_directories(main ${SDL2_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS}  ${GLUT_INCLUDE_DIRS})
 target_link_libraries(main ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
 
-add_executable(circle src/circle.cpp)
+add_executable(circle src/generators/circle.cpp)
+add_executable(inf src/generators/inf.cpp)

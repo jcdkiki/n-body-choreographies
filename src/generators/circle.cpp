@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <math.h>
-#include "common.hpp"
+#include "../common.hpp"
 
 int main(int argc, char **argv)
 {

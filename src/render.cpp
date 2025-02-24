@@ -19,8 +19,8 @@ static SDL_TimerID timer_id;
 static SDL_GLContext context;
 
 static int cur_trail = 0;
-static Vec3 camera_pos = { 0, 5, 0 };
-static Vec3 camera_rotation = { 0, 0, -M_PI/2 };
+static Vec3 camera_pos = { 0, -5, 0 };
+static Vec3 camera_rotation = { 0, 0, M_PI/2 };
 static Vec3 camera_direction;
 static Vec3 camera_direction_normal;
 static Vec3 camera_velocity;
