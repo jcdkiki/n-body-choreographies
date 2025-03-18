@@ -25,10 +25,8 @@ void S_CalculateDelta(BodyState *cur_state, BodyState *delta)
 
             Vec3 r = cur_state[j].position - cur_state[i].position;
             double r2 = length2(r);
-            delta[i].velocity += (r / sqrt(r2)) * (GRAVITY_CONSTANT * data[i].mass * data[j].mass / r2);  
+            delta[i].velocity += (r / sqrt(r2)) * (GRAVITY_CONSTANT * data[j].mass / r2);  
         }
-
-        delta[i].velocity /= data[i].mass;
     }
 }
 
