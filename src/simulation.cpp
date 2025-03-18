@@ -34,37 +34,30 @@ void S_CalculateDelta(BodyState *cur_state, BodyState *delta)
 
 void S_Step(double dt)
 {
-    BodyState *tmp_state = (BodyState*)malloc(sizeof(BodyState) * N);
-    BodyState **deltas = (BodyState**)malloc(sizeof(BodyState*) * method.n);
-    for (int i = 0; i < method.n; i++) {
-        deltas[i] = (BodyState*)malloc(sizeof(BodyState) * N);
-    }
+    BodyState* tmp_state = (BodyState*)malloc(sizeof(BodyState) * N);
+    BodyState* deltas = (BodyState*)malloc(sizeof(BodyState) * N * method.n);
 
     for (int i = 0; i < method.n; i++) {
         memcpy(tmp_state, state, sizeof(BodyState) * N);
+
         for (int j = 0; j < i; j++) {
             for (int k = 0; k < N; k++) {
-                tmp_state[k].position += deltas[j][k].position * method.a[i][j] * dt;
-                tmp_state[k].velocity += deltas[j][k].velocity * method.a[i][j] * dt;
+                tmp_state[k].position += deltas[j * N + k].position * method.a[i][j] * dt;
+                tmp_state[k].velocity += deltas[j * N + k].velocity * method.a[i][j] * dt;
             }
         }
-        
-        S_CalculateDelta(tmp_state, deltas[i]);
+
+        S_CalculateDelta(tmp_state, &deltas[i * N]);
     }
 
     for (int i = 0; i < N; i++) {
         BodyState sum = {};
         for (int j = 0; j < method.n; j++) {
-            sum.position += deltas[j][i].position * method.k[j] * dt;
-            sum.velocity += deltas[j][i].velocity * method.k[j] * dt;
+            sum.position += deltas[j * N + i].position * method.k[j] * dt;
+            sum.velocity += deltas[j * N + i].velocity * method.k[j] * dt;
         }
-
         state[i].position += sum.position;
         state[i].velocity += sum.velocity;
-    }
-
-    for (int i = 0; i < method.n; i++) {
-        free(deltas[i]);
     }
 
     free(deltas);
