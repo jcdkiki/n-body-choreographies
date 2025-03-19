@@ -87,6 +87,10 @@ void S_ReadState()
 void S_ReadMethod(const char *filename)
 {
     FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        printf("Error: Could not open method file %s\n", filename);
+        exit(1);
+    }
 
     fscanf(fp, "%d", &method.n);
 
@@ -97,16 +101,35 @@ void S_ReadMethod(const char *filename)
         method.a[i] = (double*)malloc(sizeof(double) * i);
         
         for (int j = 0; j < i; j++) {
-            double a, b;
-            fscanf(fp, "%lf/%lf", &a, &b);
-            method.a[i][j] = a/b;
+            char buffer[32];
+            fscanf(fp, "%s", buffer);
+
+            if (strchr(buffer, '/')) {
+                double a, b;
+                sscanf(buffer, "%lf/%lf", &a, &b);
+                method.a[i][j] = a / b;
+            }
+            else {
+                double a;
+                sscanf(buffer, "%lf", &a);
+                method.a[i][j] = a;
+            }
         }
     }
 
     for (int i = 0; i < method.n; i++) {
-        double a, b;
-        fscanf(fp, "%lf/%lf", &a, &b);
-        method.k[i] = a/b;
+        char buffer[32];
+        fscanf(fp, "%s", buffer);
+        
+        if (strchr(buffer, '/')) {
+            double a, b;
+            sscanf(buffer, "%lf/%lf", &a, &b);
+            method.k[i] = a / b;
+        } else {
+            double a;
+            sscanf(buffer, "%lf", &a);
+            method.k[i] = a;
+        }
     }
 
     fclose(fp);
