@@ -6,7 +6,7 @@ unsigned int callback(unsigned int interval, void *name)
 {
     double dt = (double)interval / 1000.f;
 
-    S_Step(dt);
+    S_Step_ImplicitEuler(dt);
     R_Step(dt);
 
     return interval;

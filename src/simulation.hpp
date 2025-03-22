@@ -20,7 +20,8 @@ extern int N;
 extern BodyState *state;
 extern BodyData  *data;
 
-void S_Step(double dt);
+void S_Step_RK(double dt);
 void S_Init(const char *method_filename);
+void S_Step_ImplicitEuler(double dt);
 
 #endif

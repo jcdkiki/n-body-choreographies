@@ -1,6 +1,7 @@
 #include "simulation.hpp"
 #include <string.h>
 #include <stdio.h>
+#include <cmath>
 
 struct Method {
     int n;
@@ -30,7 +31,7 @@ void S_CalculateDelta(BodyState *cur_state, BodyState *delta)
     }
 }
 
-void S_Step(double dt)
+void S_Step_RK(double dt)
 {
     BodyState* tmp_state = (BodyState*)malloc(sizeof(BodyState) * N);
     BodyState* deltas = (BodyState*)malloc(sizeof(BodyState) * N * method.n);
@@ -59,6 +60,35 @@ void S_Step(double dt)
     }
 
     free(deltas);
+    free(tmp_state);
+}
+
+void S_Step_ImplicitEuler(double dt) {
+    const int max_iter = 10;
+    BodyState* tmp_state = (BodyState*)malloc(sizeof(BodyState) * N);
+    BodyState* prev_state = (BodyState*)malloc(sizeof(BodyState) * N);
+    BodyState* k1 = (BodyState*)malloc(sizeof(BodyState) * N);
+
+    S_CalculateDelta(state, k1);
+    for (int i = 0; i < N; i++) {
+        tmp_state[i].position = state[i].position + k1[i].position * dt;
+        tmp_state[i].velocity = state[i].velocity + k1[i].velocity * dt;
+    }
+
+    for (int iter = 0; iter < max_iter; iter++) {
+        memcpy(prev_state, tmp_state, sizeof(BodyState) * N); 
+        S_CalculateDelta(prev_state, k1); 
+
+        for (int i = 0; i < N; i++) {
+            tmp_state[i].position = state[i].position + k1[i].position * dt;
+            tmp_state[i].velocity = state[i].velocity + k1[i].velocity * dt;
+        }
+    }
+
+    memcpy(state, tmp_state, sizeof(BodyState) * N);
+
+    free(k1);
+    free(prev_state);
     free(tmp_state);
 }
 
