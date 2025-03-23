@@ -29,4 +29,6 @@ inline double length(const Vec3 &a)
     return sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
 }
 
+void M_InverseMatrix(double *mat, int n, double *inv);
+
 #endif
