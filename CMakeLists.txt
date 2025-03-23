@@ -5,7 +5,7 @@ find_package(SDL2 REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(OpenGL REQUIRED)
 
-add_executable(main src/main.cpp src/render.cpp src/simulation.cpp)
+add_executable(main src/main.cpp src/render.cpp src/simulation.cpp src/common.cpp)
 include_directories(main ${SDL2_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS}  ${GLUT_INCLUDE_DIRS})
 target_link_libraries(main ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
 
