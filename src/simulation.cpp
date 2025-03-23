@@ -219,7 +219,6 @@ void S_MulMatVec(double *mat, double *vec, int n, double *res)
     }
 }
 
-/*
 void S_Step(double dt) {
     const double tolerance = 1e-10;
     const int max_iter = 10;
@@ -271,8 +270,6 @@ void S_Step(double dt) {
     free(tmp);
     free(F);
 }
-*/
-
 
 void S_ReadState()
 {
