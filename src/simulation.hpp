@@ -20,6 +20,7 @@ extern int N;
 extern BodyState *state;
 extern BodyData  *data;
 
+void S_Step_AdamsPredictorCorrector(double dt);
 void S_Step(double dt);
 void S_Init(const char *method_filename);
 

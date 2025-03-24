@@ -14,6 +14,13 @@ unsigned int callback(unsigned int interval, void *name)
     return interval;
 }
 
+unsigned int callback_predictor_corrector(unsigned int interval, void* name) {
+    double dt = (double)interval / 1000.0 * speed;
+    S_Step_AdamsPredictorCorrector(dt);
+    R_Step(dt);
+    return interval;
+}
+
 int main(int argc, char **argv)
 {
     if (argc == 3) {
