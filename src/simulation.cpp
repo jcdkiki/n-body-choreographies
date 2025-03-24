@@ -33,92 +33,6 @@ void S_CalculateDelta(BodyState *cur_state, BodyState *delta)
     }
 }
 
-/*
-void S_CalculateJacobianCij(double mj, Vec3 *ri, Vec3 *rj, double *out, int stride)
-{
-    double r = length(*rj - *ri);
-    double r3 = r*r*r;
-    double r5 = r3*r*r;
-    double gmj = GRAVITY_CONSTANT * mj;
-
-    double Rx = (rj->x - ri->x);
-    double Ry = (rj->y - ri->y);
-    double Rz = (rj->z - ri->z);
-
-    out[stride*0 + 0] = gmj * (1.0 / r3 - 3.0*Rx*Rx / r5);  // C_ij_xx
-    out[stride*0 + 1] = -3.0 * gmj * Rx * Ry / r5;          // C_ij_xy   
-    out[stride*0 + 2] = -3.0 * gmj * Rx * Rz / r5;          // C_ij_xz 
-
-    out[stride*1 + 0] = out[stride*0 + 1];                  // C_ij_yx
-    out[stride*1 + 1] = gmj * (1.0 / r3 - 3.0*Ry*Ry / r5);  // C_ij_yy
-    out[stride*1 + 2] = -3.0 * gmj * Ry * Rz / r5;          // C_ij_yz
-    
-    out[stride*2 + 0] = out[stride*0 + 2];                  // C_ij_zx
-    out[stride*2 + 1] = out[stride*1 + 2];                  // C_ij_zy
-    out[stride*2 + 2] = gmj * (1.0 / r3 - 3.0*Rz*Rz / r5);  // C_ij_zz
-}
-
-void S_CalculateJacobianABi(BodyState *state, int i, int n_bodies, double *out, int stride)
-{
-    double res_xx = 0.0, res_xy = 0.0, res_xz = 0.0,
-                         res_yy = 0.0, res_yz = 0.0,
-                                       res_zz = 0.0;
-
-    for (int j = 0; j < n_bodies; j++) {
-        if (i == j) continue;
-
-        Vec3 R = state[j].position - state[i].position;
-        double r = length(R);
-        double r3 = r*r*r;
-        double r5 = r3*r*r;
-        double mj = data[j].mass;
-
-        res_xx += mj * (1.0 / r3 - 3.0*R.x*R.x / r5);
-        res_yy += mj * (1.0 / r3 - 3.0*R.y*R.y / r5);
-        res_zz += mj * (1.0 / r3 - 3.0*R.z*R.z / r5);
-
-        res_xy += mj * R.x * R.y / r5;
-        res_xz += mj * R.x * R.z / r5;
-        res_yz += mj * R.y * R.z / r5;
-    }
-
-    out[stride*0 + 0] = -GRAVITY_CONSTANT * res_xx;
-    out[stride*1 + 1] = -GRAVITY_CONSTANT * res_yy;
-    out[stride*2 + 2] = -GRAVITY_CONSTANT * res_zz;
-
-    out[stride*0 + 1] = 3*GRAVITY_CONSTANT * res_xy;
-    out[stride*0 + 2] = 3*GRAVITY_CONSTANT * res_xz;
-    out[stride*1 + 2] = 3*GRAVITY_CONSTANT * res_yz;
-
-    out[stride*1 + 0] = out[stride*0 + 1];
-    out[stride*2 + 0] = out[stride*0 + 2];
-    out[stride*2 + 1] = out[stride*1 + 2];
-}
-
-void S_BuildJacobian(BodyState *state, int n_bodies, double *jacobian)
-{
-    int row = n_bodies * 6;
-    for (int i = 0; i < row * row; i++) {
-        jacobian[i] = 0.0;
-    }
-    
-    for (int i = 0; i < n_bodies * 3; i++) {
-        jacobian[i*row + i + n_bodies*3] = 1.0;
-    }
-
-    for (int i = 0; i < n_bodies; i++) {
-        double *loc = &jacobian[(i*3 + n_bodies*3) * row + i*3];
-        S_CalculateJacobianABi(state, i, n_bodies, loc, row);
-
-        for (int j = 0; j < n_bodies; j++) {
-            if (i == j) continue;
-
-            loc = &jacobian[(i*3 + n_bodies*3) * row + j*3];
-            S_CalculateJacobianCij(data[j].mass, &state[i].position, &state[j].position, loc, row);
-        }
-    }
-}*/
-
 void S_CalculateJacobianBlock(BodyState *state, int i, int j, double *out, int stride)
 {
     if (i == j) {
@@ -219,7 +133,7 @@ void S_MulMatVec(double *mat, double *vec, int n, double *res)
     }
 }
 
-void S_Step(double dt) {
+void S_Step_Implicit(double dt) {
     const double tolerance = 1e-10;
     const int max_iter = 10;
     
@@ -269,6 +183,97 @@ void S_Step(double dt) {
     free(guess);
     free(tmp);
     free(F);
+}
+
+void S_Step_Explicit(BodyState* current_state, BodyState* next_state, double dt)
+{
+    BodyState *tmp_state = (BodyState*)malloc(sizeof(BodyState) * N);
+    BodyState **deltas = (BodyState**)malloc(sizeof(BodyState*) * method.n);
+    
+    for (int i = 0; i < method.n; i++) {
+        deltas[i] = (BodyState*)malloc(sizeof(BodyState) * N);
+    }
+
+    if (next_state != current_state) {
+        memcpy(next_state, current_state, sizeof(BodyState) * N);
+    }
+
+    for (int i = 0; i < method.n; i++) {
+        memcpy(tmp_state, current_state, sizeof(BodyState) * N);
+        for (int j = 0; j < i; j++) {
+            for (int k = 0; k < N; k++) {
+                tmp_state[k].position += deltas[j][k].position * method.a[i][j] * dt;
+                tmp_state[k].velocity += deltas[j][k].velocity * method.a[i][j] * dt;
+            }
+        }
+        
+        S_CalculateDelta(tmp_state, deltas[i]);
+    }
+
+    for (int i = 0; i < N; i++) {
+        BodyState sum = {};
+        for (int j = 0; j < method.n; j++) {
+            sum.position += deltas[j][i].position * method.k[j] * dt;
+            sum.velocity += deltas[j][i].velocity * method.k[j] * dt;
+        }
+
+        next_state[i].position += sum.position;
+        next_state[i].velocity += sum.velocity;
+    }
+
+    for (int i = 0; i < method.n; i++) {
+        free(deltas[i]);
+    }
+    free(deltas);
+    free(tmp_state);
+}
+
+void S_Step_Explicit(double dt) {
+    S_Step_Explicit(state, state, dt);
+}
+
+int S_Step_Adaptive(AdaptiveParams* params) {
+    static BodyState *state1 = NULL;
+    static BodyState *state2 = NULL;
+    static BodyState *temp_state = NULL;
+
+    if (state1 == NULL) {
+        state1 = (BodyState*)malloc(sizeof(BodyState) * N);
+        state2 = (BodyState*)malloc(sizeof(BodyState) * N);
+        temp_state = (BodyState*)malloc(sizeof(BodyState) * N);
+    }
+    
+    // Первый шаг с current_dt
+    S_Step_Explicit(state, state1, params->current_dt);
+    
+    // Два шага с current_dt/2
+    memcpy(temp_state, state, sizeof(BodyState) * N);
+    S_Step_Explicit(temp_state, temp_state, params->current_dt/2);
+    S_Step_Explicit(temp_state, state2, params->current_dt/2);
+    
+    // Оценка ошибки
+    double error = 0.0;
+    for (int i = 0; i < N; i++) {
+        Vec3 pos_diff = state1[i].position - state2[i].position;
+        Vec3 vel_diff = state1[i].velocity - state2[i].velocity;
+        error += length2(pos_diff) + length2(vel_diff);
+    }
+    error = sqrt(error / (6*N));
+    
+    // Адаптация шага
+    if (error < params->tolerance) {
+        memcpy(state, state2, sizeof(BodyState) * N);
+        params->sim_time += params->current_dt;
+
+        if (error < params->tolerance / 10) {
+            params->current_dt = fmin(params->current_dt * params->dt_scale, params->max_dt);
+        }
+        return 1;
+    } else {
+        params->current_dt = fmax(params->current_dt * params->safety * pow(params->tolerance/error, 0.2), 
+                  params->min_dt);
+        return 0; 
+    }
 }
 
 void S_ReadState()
