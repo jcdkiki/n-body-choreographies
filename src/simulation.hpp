@@ -2,6 +2,7 @@
 #define SIMULATION_HPP
 
 #include "common.hpp"
+#include <fstream>
 
 constexpr int TRAIL_SIZE = 1024;
 constexpr int STEP_MS = 1;
