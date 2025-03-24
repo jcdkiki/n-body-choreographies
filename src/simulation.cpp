@@ -185,6 +185,57 @@ void S_Step_Implicit(double dt) {
     free(F);
 }
 
+void S_Step_AdamsPredictorCorrector(double dt) {
+    static BodyState *prev_k[4];
+    static bool initialized = false;
+
+    if (!initialized) {
+        for (int i = 0; i < 4; i++) {
+            prev_k[i] = (BodyState*)malloc(N * sizeof(BodyState));
+            S_CalculateDelta(state, prev_k[i]);
+        }
+        initialized = true;
+    }
+
+    // Предиктор (Адамс-Бэшфорт 4-го порядка)
+    BodyState *predictor = (BodyState*)malloc(N * sizeof(BodyState));
+    for (int i = 0; i < N; i++) {
+        predictor[i].position = state[i].position + (
+            prev_k[0][i].position * 55.0 - prev_k[1][i].position * 59.0 +
+            prev_k[2][i].position * 37.0 - prev_k[3][i].position * 9.0
+        ) * dt / 24.0;
+
+        predictor[i].velocity = state[i].velocity + (
+            prev_k[0][i].velocity * 55.0 - prev_k[1][i].velocity * 59.0 +
+            prev_k[2][i].velocity * 37.0 - prev_k[3][i].velocity * 9.0
+        ) * dt / 24.0;
+    }
+
+    // Корректор (Адамс-Моултон 4-го порядка)
+    BodyState *k_new = (BodyState*)malloc(N * sizeof(BodyState));
+    S_CalculateDelta(predictor, k_new);
+
+    for (int i = 0; i < N; i++) {
+        state[i].position += (
+            k_new[i].position * 9.0 + prev_k[0][i].position * 19.0 -
+            prev_k[1][i].position * 5.0 + prev_k[2][i].position
+        ) * dt / 24.0;
+
+        state[i].velocity += (
+            k_new[i].velocity * 9.0 + prev_k[0][i].velocity * 19.0 -
+            prev_k[1][i].velocity * 5.0 + prev_k[2][i].velocity
+        ) * dt / 24.0;
+    }
+    
+    for (int i = 3; i > 0; i--) {
+        memcpy(prev_k[i], prev_k[i-1], N * sizeof(BodyState));
+    }
+    memcpy(prev_k[0], k_new, N * sizeof(BodyState));
+
+    free(predictor);
+    free(k_new);
+}
+
 void S_Step_Explicit(BodyState* current_state, BodyState* next_state, double dt)
 {
     BodyState *tmp_state = (BodyState*)malloc(sizeof(BodyState) * N);

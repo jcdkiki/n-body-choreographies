@@ -30,6 +30,7 @@ extern int N;
 extern BodyState *state;
 extern BodyData  *data;
 
+void S_Step_AdamsPredictorCorrector(double dt);
 void S_Step_Explicit(BodyState* current_state, BodyState* next_state, double dt);
 int S_Step_Adaptive(AdaptiveParams* params);
 void S_Step_Implicit(double dt);

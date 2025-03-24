@@ -24,6 +24,14 @@ unsigned int callback_base(unsigned int interval, void *name)
     return interval;
 }
 
+unsigned int callback_predictor_corrector(unsigned int interval, void* name) {
+    double dt = (double)interval / 1000.0 * speed;
+    S_Step_AdamsPredictorCorrector(dt);
+    R_Step(dt);
+    
+    return interval;
+}
+
 unsigned int callback_adaptive(unsigned int interval, void* name) {
     // для метода с адитивным шагом
     double real_dt = (double)interval / 1000.0 * speed;
