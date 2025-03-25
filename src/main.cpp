@@ -42,10 +42,10 @@ unsigned int callback_base(unsigned int interval, void *name) {
     
     if (current_method == METHOD_EXPLICIT) {
         S_Step_Explicit(dt);
-        log_position(explicit_log, t);
+        log_position(t);
     } else if (current_method == METHOD_IMPLICIT) {
         S_Step_Implicit(dt);
-        log_position(implicit_log, t);
+        log_position(t);
     }
     
     R_Step(dt);
@@ -58,7 +58,7 @@ unsigned int callback_adams(unsigned int interval, void* name) {
     double dt = (double)interval / 1000.0 * speed;
     
     S_Step_AdamsPredictorCorrector(dt);
-    log_position(adams_log, t);
+    log_position(t);
     
     R_Step(dt);
     t += dt;
@@ -76,7 +76,7 @@ unsigned int callback_adaptive(unsigned int interval, void* name) {
         S_Step_Adaptive(&params);
     }
     
-    log_position(adaptive_log, params.sim_time);
+    log_position(params.sim_time);
     R_Step(real_dt);
     t += real_dt;
     return interval;

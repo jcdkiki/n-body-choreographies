@@ -9,4 +9,4 @@ extern std::ofstream adaptive_log;
 
 void init_logs();
 void close_logs();
-void log_position(std::ofstream& log, double t);
+void log_position(double t);
