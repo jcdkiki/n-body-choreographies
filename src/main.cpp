@@ -1,8 +1,8 @@
+#include "logging.hpp"
 #include "simulation.hpp"
 #include "render.hpp"
 #include <cstdio>
 #include <string.h>
-
 typedef enum {
     METHOD_EXPLICIT,
     METHOD_IMPLICIT,
@@ -37,26 +37,36 @@ void set_method(const char* method_name) {
 }
 
 unsigned int callback_base(unsigned int interval, void *name) {
+    static double t = 0;
     double dt = (double)interval / 1000.f * speed;
     
     if (current_method == METHOD_EXPLICIT) {
         S_Step_Explicit(dt);
+        log_position(t);
     } else if (current_method == METHOD_IMPLICIT) {
         S_Step_Implicit(dt);
+        log_position(t);
     }
     
     R_Step(dt);
+    t += dt;
     return interval;
 }
 
 unsigned int callback_adams(unsigned int interval, void* name) {
+    static double t = 0;
     double dt = (double)interval / 1000.0 * speed;
+    
     S_Step_AdamsPredictorCorrector(dt);
+    log_position(t);
+    
     R_Step(dt);
+    t += dt;
     return interval;
 }
 
 unsigned int callback_adaptive(unsigned int interval, void* name) {
+    static double t = 0;
     double real_dt = (double)interval / 1000.0 * speed;
     double target_time = params.sim_time + real_dt;
     
@@ -65,7 +75,10 @@ unsigned int callback_adaptive(unsigned int interval, void* name) {
         if (remaining < params.current_dt) params.current_dt = remaining;
         S_Step_Adaptive(&params);
     }
+    
+    log_position(params.sim_time);
     R_Step(real_dt);
+    t += real_dt;
     return interval;
 }
 
@@ -76,10 +89,12 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    init_logs();
+
     if (argc >= 4) {
         set_method(argv[3]);
     }
-    
+
     S_Init(argv[1]);
     sscanf(argv[2], "%lf", &speed);
 
@@ -95,6 +110,8 @@ int main(int argc, char **argv) {
         if (!R_GetInput()) break;
         R_Draw();
     }
+
+    close_logs();
     
     R_Deinit();
     return 0;
